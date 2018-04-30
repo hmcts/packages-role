@@ -1,0 +1,18 @@
+---
+
+# journald-proxy needs to be installed before anything else
+- name: Install journald-proxy from Artifactory
+  become: yes
+  get_url:
+    url: "{{ artifactory_base_url }}{{ journald_proxy_base }}{{ journald_proxy_version }}"
+    dest: /usr/bin/journald-proxy
+    owner: root
+    group: root
+    checksum: "sha256:{{ journald_proxy_sha256_checksum }}"
+    mode: 0755
+
+# tasks file for reform.packages
+- include: install.yml
+  with_items: "{{ packages }}"
+  loop_control:
+    loop_var: package

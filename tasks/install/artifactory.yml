@@ -1,0 +1,70 @@
+---
+
+- name: Set base yum repo name
+  set_fact:
+    packages_base_repo_name: "{{ package.project }}-{{ package.name }}"
+
+- name: Set yum repo - prod
+  set_fact:
+    packages_yum_repo_source: "production"
+  when: package.deployment_env | default('dev') in ['prod','preprod']
+
+- name: Set yum repo - other
+  set_fact:
+    packages_yum_repo_source: "local"
+  when: package.deployment_env | default('dev') not in ['prod','preprod']
+
+- name: Set yum repo id
+  set_fact:
+    packages_yum_repo_id: "{{ packages_base_repo_name }}-{{ packages_yum_repo_source }}"
+
+- name: Set yum repo path
+  set_fact:
+    packages_yum_repo_path: "{{ package.project }}-{{ packages_yum_repo_source }}/{{ package.name }}"
+
+- name: Add package repository
+  become: yes
+  yum_repository:
+   name: "{{ packages_yum_repo_id }}"
+   description: "{{ packages_base_repo_name }}"
+   baseurl: "{{ artifactory_base_url }}/{{ packages_yum_repo_path }}"
+   gpgcheck: 0
+   metadata_expire: 1
+
+- name: Wait until the package is available
+  command: "repoquery --repofrompath={{ packages_base_repo_name }},{{ artifactory_base_url }}/{{ packages_yum_repo_path }}/ --repoid={{ packages_yum_repo_id }}  --nvr -q -a {{ package.project }}-{{ package.name }}-{{ package.version }}"
+  register: result
+  until: result.stdout.find("{{ package.project }}-{{ package.name }}-{{ package.version }}") != -1
+  retries: 20
+  delay: 10
+  when: (package.version is defined) and (package.version != '-1')
+
+- name: "Install {{ package.name }}-{{ package.version }} versioned RPM from package repo"
+  become: yes
+  yum:
+    name: "{{ package.project }}-{{ package.name }}-{{ package.version }}"
+    state: present
+    update_cache: yes
+  when: (package.version is defined) and (package.version != '-1')
+
+- name: "Install {{ package.name }} latest RPM from package repo"
+  become: yes
+  yum:
+    name: "{{ package.project }}-{{ package.name }}"
+    state: "{{ package.state | default('latest') }}"
+    update_cache: yes
+  when: (package.version is not defined) or (package.version == '-1')
+
+- name: "Get installed version of {{ package.name }}"
+  become: yes
+  yum:
+    list: "{{ package.project }}-{{ package.name }}"
+  register: _packages_role_list_installed
+
+- name: "Extract installed package details"
+  set_fact:
+    _packages_role_installed: "{{ _packages_role_list_installed.results | selectattr('yumstate', 'equalto', 'installed') | first }}"
+
+- name: "Set fact for installed {{ package.name }} version"
+  set_fact:
+    _packages_role_installed_version: "{{ _packages_role_installed.version }}-{{ _packages_role_installed.release }}"

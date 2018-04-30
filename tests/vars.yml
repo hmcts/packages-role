@@ -1,0 +1,19 @@
+---
+
+versions:
+  prototype_buildnumber: '1'
+
+port: '2000'
+
+packages:
+  - name: "test-1"
+    project: "molecule"
+    version: "{{ versions.prototype_buildnumber | default('-1') }}"
+    rpm_location: "lib/{{ versions.prototype_buildnumber | default('-1') | string }}/molecule-test-*.rpm"
+    custom_vars_env:
+      - { name: "PORT",
+          value: '"{{ port }}"' }
+      - { name: "ENV_1",
+          value: '"Hello, World!"' }
+      - { name: "ENV_2",
+          value: '"Hola"' }

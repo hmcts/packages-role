@@ -1,0 +1,33 @@
+---
+
+- name: "Get installed RPM buildnumber"
+  shell: "yum list installed {{ package.project }}-{{ package.name }} | grep {{ package.project }}-{{ package.name }} | awk '{print $2}' | cut -d'-' -f2"
+  register: installed_rpm_buildnumber
+  changed_when: False
+  args:
+    warn: no
+
+- name: "Copy | copy the rpm"
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/{{ package.name }}.rpm"
+    owner: root
+    group: root
+    mode: 0644
+  become: yes
+  with_fileglob: "{{ package.rpm_location }}"
+  when: package.version != '-1' and installed_rpm_buildnumber.stdout != package.version
+
+- name: "Install rpm"
+  become: "yes"
+  yum:
+    name: "/tmp/{{ package.name }}.rpm"
+    state: present
+  register: rpm
+  when: package.version != '-1' and installed_rpm_buildnumber.stdout != package.version
+
+- name: "Cleanup | remove the rpm"
+  become: "yes"
+  file:
+    path: "/tmp/{{ package.name }}.rpm"
+    state: absent

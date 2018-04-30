@@ -1,0 +1,9 @@
+PACKAGES_ENVIRONMENT={{ package.deployment_env|default("unknown") }}
+PACKAGES_PROJECT={{ package.project }}
+PACKAGES_NAME={{ package.name }}
+PACKAGES_VERSION={{ _packages_role_installed_version | default(package.version) }}
+{% if package.custom_vars_env is defined %}
+{% for custom_var in package.custom_vars_env %}
+{{custom_var.name}}={{custom_var.value}}
+{% endfor %}
+{% endif %}

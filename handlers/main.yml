@@ -1,0 +1,11 @@
+---
+- name: "restart service"
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: "{{ package.project }}-{{ package.name }}"
+  become: yes
+  no_log: yes
+  with_items: "{{ packages }}"
+  loop_control:
+      loop_var: package

@@ -1,0 +1,10 @@
+---
+
+- hosts: all
+  tasks:
+    - name: Include environment specific vars
+      include_vars: "tests/vars.yml"
+
+- hosts: all
+  roles:
+    - role: packages-role

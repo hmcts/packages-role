@@ -1,0 +1,14 @@
+---
+
+- name: "Deploy from defined source (Jenkins/Artifactory)"
+  include: "install/{{ package.install_from|default('jenkins') }}.yml"
+
+- name: "Add custom environment file"
+  become: "yes"
+  template:
+    src: "templates/sysconfig.j2"
+    dest: "/etc/sysconfig/{{ package.project }}-{{ package.name }}"
+    owner: "root"
+    group: "root"
+    mode: 0644
+  notify: "restart service"

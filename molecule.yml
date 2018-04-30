@@ -1,0 +1,20 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+docker:
+  containers:
+    - name: packages-role-${BRANCH_NAME}-${BUILD_NUMBER}
+      dockerfile: Dockerfile
+      image: centos
+      image_version: 7.3.1611
+      build_image: yes
+      privileged: yes
+      cap_add:
+        - SYS_ADMIN
+      environment:
+        http_proxy: ${http_proxy}
+
+verifier:
+  name: testinfra
